@@ -5,9 +5,9 @@ import 'package:flutter_layout_grid/flutter_layout_grid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_task_manager/src/common_widgets/async_value_widget.dart';
 import 'package:flutter_task_manager/src/constants/app_sizes.dart';
-import 'package:flutter_task_manager/src/features/tasks/data/fake_tasks_repository.dart';
 import 'package:flutter_task_manager/src/features/tasks/domain/task.dart';
 import 'package:flutter_task_manager/src/features/tasks/presentation/task_card.dart';
+import 'package:flutter_task_manager/src/features/tasks/presentation/tasks_controller.dart';
 import 'package:flutter_task_manager/src/localization/string_hardcoded.dart';
 
 /// A widget that displays the list of tasks that match the search query.
@@ -16,9 +16,10 @@ class TasksGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tasksListValue = ref.watch(tasksListStreamProvider);
+    final tasksValue = ref.watch(tasksControllerProvider);
+
     return AsyncValueWidget<List<Task>>(
-      value: tasksListValue,
+      value: tasksValue,
       data: (tasks) => tasks.isEmpty
           ? Center(
               child: Text(
@@ -30,15 +31,80 @@ class TasksGrid extends ConsumerWidget {
               itemCount: tasks.length,
               itemBuilder: (_, index) {
                 final task = tasks[index];
-                return TaskCard(task: task, onPressed: () {});
+                return TaskCard(
+                  task: task,
+                  onPressed: () {
+                    // TODO: Navigate to task details or perform action
+                  },
+                  onDelete: () async {
+                    final shouldDelete = await _showDeleteConfirmation(
+                      context,
+                      task,
+                    );
+                    if (shouldDelete == true) {
+                      try {
+                        await ref
+                            .read(tasksControllerProvider.notifier)
+                            .deleteTask(task.pid);
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Task "${task.name}" deleted'.hardcoded,
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to delete task: $e'.hardcoded,
+                              ),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
+                );
               },
             ),
+    );
+  }
+
+  Future<bool?> _showDeleteConfirmation(BuildContext context, Task task) {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Task'.hardcoded),
+          content: Text(
+            'Are you sure you want to delete "${task.name}"?'.hardcoded,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancel'.hardcoded),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text('Delete'.hardcoded),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
 /// Grid widget with content-sized items.
-/// See: https://codewithandrea.com/articles/flutter-layout-grid-content-sized-items/
 class TasksLayoutGrid extends StatelessWidget {
   const TasksLayoutGrid({
     super.key,
@@ -46,10 +112,8 @@ class TasksLayoutGrid extends StatelessWidget {
     required this.itemBuilder,
   });
 
-  /// Total number of items to display.
   final int itemCount;
 
-  /// Function used to build a widget for a given index in the grid.
   final Widget Function(BuildContext, int) itemBuilder;
 
   @override
@@ -67,14 +131,12 @@ class TasksLayoutGrid extends StatelessWidget {
         final numRows = (itemCount / crossAxisCount).ceil();
         // set all the row sizes to auto (self-sizing height)
         final rowSizes = List.generate(numRows, (_) => auto);
-        // Custom layout grid. See: https://pub.dev/packages/flutter_layout_grid
         return LayoutGrid(
           columnSizes: columnSizes,
           rowSizes: rowSizes,
           rowGap: Sizes.p24, // equivalent to mainAxisSpacing
           columnGap: Sizes.p24, // equivalent to crossAxisSpacing
           children: [
-            // render all the items with automatic child placement
             for (var i = 0; i < itemCount; i++) itemBuilder(context, i),
           ],
         );

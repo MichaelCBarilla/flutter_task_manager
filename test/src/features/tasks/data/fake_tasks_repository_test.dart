@@ -5,37 +5,27 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   FakeTasksRepository makeTasksRepository() =>
       FakeTasksRepository(addDelay: false);
+
   group('FakeTasksRepository', () {
-    test('getTasksList returns global list', () {
-      final tasksRepository = makeTasksRepository();
-      expect(tasksRepository.getTasksList(), kTestTasks);
-    });
-
-    test('getTask(1) returns first item', () {
-      final tasksRepository = makeTasksRepository();
-      expect(tasksRepository.getTask('1'), kTestTasks[0]);
-    });
-
-    test('getTask(100) returns null', () {
-      final tasksRepository = makeTasksRepository();
-      expect(tasksRepository.getTask('100'), null);
-    });
-
     test('fetchTasksList returns global list', () async {
       final tasksRepository = makeTasksRepository();
       expect(await tasksRepository.fetchTasksList(), kTestTasks);
     });
-    test('watchTasksList emits global list', () {
+
+    test('fetchTask(1) returns first item', () async {
       final tasksRepository = makeTasksRepository();
-      expect(tasksRepository.watchTasksList(), emits(kTestTasks));
+      expect(await tasksRepository.fetchTask('1'), kTestTasks[0]);
     });
-    test('watchTask(1) emits first item', () {
+
+    test('fetchTask(100) returns null', () async {
       final tasksRepository = makeTasksRepository();
-      expect(tasksRepository.watchTask('1'), emits(kTestTasks[0]));
+      expect(await tasksRepository.fetchTask('100'), null);
     });
-    test('watchTask(100) emits null', () {
+
+    test('deleteTask completes without error', () async {
       final tasksRepository = makeTasksRepository();
-      expect(tasksRepository.watchTask('100'), emits(null));
+      // Should complete without throwing
+      await expectLater(tasksRepository.deleteTask('1'), completes);
     });
   });
 }
