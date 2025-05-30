@@ -77,6 +77,9 @@ void main() {
     when(
       () => taskRepository.deleteTask('1'),
     ).thenAnswer((_) => Future.value());
+    when(
+      taskRepository.fetchTasksList,
+    ).thenAnswer((_) => Future.value(kTestTasks.sublist(1)));
 
     container.listen(
       tasksControllerProvider,
@@ -143,11 +146,9 @@ void main() {
     // verify
     expect(controller.state.value, refreshedTasks);
 
+    // No loading state to avoid autoRefresh UI flicker
     verifyInOrder([
-      () =>
-          listener(any(that: isA<AsyncData>()), any(that: isA<AsyncLoading>())),
-      () =>
-          listener(any(that: isA<AsyncLoading>()), any(that: isA<AsyncData>())),
+      () => listener(any(that: isA<AsyncData>()), any(that: isA<AsyncData>())),
     ]);
     verifyNoMoreInteractions(listener);
     verify(() => taskRepository.fetchTasksList()).called(2);
