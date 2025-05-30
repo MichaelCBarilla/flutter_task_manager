@@ -51,7 +51,7 @@ class TasksGrid extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Task "${task.name}" deleted'.hardcoded,
+                                'Task "${task.name}" terminated'.hardcoded,
                               ),
                               duration: const Duration(seconds: 2),
                             ),
@@ -62,7 +62,7 @@ class TasksGrid extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Failed to delete task: $e'.hardcoded,
+                                'Failed to terminate task: $e'.hardcoded,
                               ),
                               backgroundColor: Colors.red,
                               duration: const Duration(seconds: 3),
@@ -83,9 +83,10 @@ class TasksGrid extends ConsumerWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Task'.hardcoded),
+          title: Text('Kill task'.hardcoded),
           content: Text(
-            'Are you sure you want to delete "${task.name}"?'.hardcoded,
+            'Are you sure you want to kill "${task.name}" (PID: ${task.pid})?'
+                .hardcoded,
           ),
           actions: [
             TextButton(
@@ -95,7 +96,7 @@ class TasksGrid extends ConsumerWidget {
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text('Delete'.hardcoded),
+              child: Text('Kill'.hardcoded),
             ),
           ],
         );

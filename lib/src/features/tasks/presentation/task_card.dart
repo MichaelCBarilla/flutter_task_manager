@@ -3,6 +3,8 @@ import 'package:flutter_task_manager/src/constants/app_sizes.dart';
 import 'package:flutter_task_manager/src/features/tasks/domain/task.dart';
 
 /// Used to show a single task inside a card.
+const kDeleteButtonKey = Key('delete-button');
+
 class TaskCard extends StatelessWidget {
   const TaskCard({
     super.key,
@@ -16,7 +18,6 @@ class TaskCard extends StatelessWidget {
 
   // * Keys for testing using find.byKey()
   static const taskCardKey = Key('task-card');
-  static const deleteButtonKey = Key('delete-button');
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +32,29 @@ class TaskCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    task.name,
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          task.name,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                  gapH24,
-                  Text(
-                    task.pid,
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  gapH8,
+                  Row(
+                    children: [
+                      Icon(Icons.memory, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'PID: ${task.pid}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                   gapH4,
                 ],
@@ -51,7 +67,7 @@ class TaskCard extends StatelessWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    key: deleteButtonKey,
+                    key: kDeleteButtonKey,
                     onTap: onDelete,
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
