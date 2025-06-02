@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_task_manager/src/features/tasks/presentation/tasks_controller.dart';
+import 'package:flutter_task_manager/src/features/tasks/presentation/tasks_state.dart';
 import 'package:flutter_task_manager/src/localization/string_hardcoded.dart';
 
 /// Search field used to filter Tasks by name
-class TasksSearchTextField extends StatefulWidget {
+class TasksSearchTextField extends ConsumerStatefulWidget {
   const TasksSearchTextField({super.key});
 
   @override
-  State<TasksSearchTextField> createState() => _TasksSearchTextFieldState();
+  ConsumerState<TasksSearchTextField> createState() =>
+      _TasksSearchTextFieldState();
 }
 
-class _TasksSearchTextFieldState extends State<TasksSearchTextField> {
+class _TasksSearchTextFieldState extends ConsumerState<TasksSearchTextField> {
   final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controller with current search state if any
+    final currentState = ref.read(tasksControllerProvider).value;
+    if (currentState != null) {
+      _controller.text = currentState.searchQuery;
+    }
+  }
 
   @override
   void dispose() {
@@ -21,9 +35,18 @@ class _TasksSearchTextFieldState extends State<TasksSearchTextField> {
 
   @override
   Widget build(BuildContext context) {
-    // See this article for more info about how to use [ValueListenableBuilder]
-    // with TextField:
-    // https://codewithandrea.com/articles/flutter-text-field-form-validation/
+    // Listen to controller state changes to keep text field in sync
+    ref.listen<AsyncValue<TasksState>>(tasksControllerProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((state) {
+        if (_controller.text != state.searchQuery) {
+          _controller.text = state.searchQuery;
+        }
+      });
+    });
+
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: _controller,
       builder: (context, value, _) {
@@ -38,14 +61,15 @@ class _TasksSearchTextFieldState extends State<TasksSearchTextField> {
                 ? IconButton(
                     onPressed: () {
                       _controller.clear();
-                      // TODO: Clear search state
+                      ref.read(tasksControllerProvider.notifier).clearSearch();
                     },
                     icon: const Icon(Icons.clear),
                   )
                 : null,
           ),
-          // TODO: Implement onChanged
-          onChanged: null,
+          onChanged: (query) {
+            ref.read(tasksControllerProvider.notifier).updateSearchQuery(query);
+          },
         );
       },
     );

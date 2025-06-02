@@ -8,6 +8,7 @@ import 'package:flutter_task_manager/src/constants/app_sizes.dart';
 import 'package:flutter_task_manager/src/features/tasks/domain/task.dart';
 import 'package:flutter_task_manager/src/features/tasks/presentation/task_card.dart';
 import 'package:flutter_task_manager/src/features/tasks/presentation/tasks_controller.dart';
+import 'package:flutter_task_manager/src/features/tasks/presentation/tasks_state.dart';
 import 'package:flutter_task_manager/src/localization/string_hardcoded.dart';
 
 /// A widget that displays the list of tasks that match the search query.
@@ -16,65 +17,74 @@ class TasksGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tasksValue = ref.watch(tasksControllerProvider);
+    final tasksState = ref.watch(tasksControllerProvider);
 
-    return AsyncValueWidget<List<Task>>(
-      value: tasksValue,
-      data: (tasks) => tasks.isEmpty
-          ? Center(
-              child: Text(
-                'No tasks found'.hardcoded,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            )
-          : TasksLayoutGrid(
-              itemCount: tasks.length,
-              itemBuilder: (_, index) {
-                final task = tasks[index];
-                return TaskCard(
-                  task: task,
-                  onPressed: () {
-                    // TODO: Navigate to task details or perform action
-                  },
-                  onDelete: () async {
-                    final shouldDelete = await _showDeleteConfirmation(
-                      context,
-                      task,
-                    );
-                    if (shouldDelete == true) {
-                      try {
-                        await ref
-                            .read(tasksControllerProvider.notifier)
-                            .deleteTask(task.pid);
+    return AsyncValueWidget<TasksState>(
+      value: tasksState,
+      data: (state) {
+        final tasks = state.filteredTasks;
 
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Task "${task.name}" terminated'.hardcoded,
-                              ),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Failed to terminate task: $e'.hardcoded,
-                              ),
-                              backgroundColor: Colors.red,
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        }
-                      }
-                    }
-                  },
-                );
-              },
+        if (tasks.isEmpty) {
+          return Center(
+            child: Text(
+              state.searchQuery.isEmpty
+                  ? 'No tasks found'.hardcoded
+                  : 'No tasks match "${state.searchQuery}"'.hardcoded,
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
             ),
+          );
+        }
+
+        return TasksLayoutGrid(
+          itemCount: tasks.length,
+          itemBuilder: (_, index) {
+            final task = tasks[index];
+            return TaskCard(
+              task: task,
+              onPressed: () {
+                // TODO: Navigate to task details or perform action
+              },
+              onDelete: () async {
+                final shouldDelete = await _showDeleteConfirmation(
+                  context,
+                  task,
+                );
+                if (shouldDelete == true) {
+                  try {
+                    await ref
+                        .read(tasksControllerProvider.notifier)
+                        .deleteTask(task.pid);
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Task "${task.name}" terminated'.hardcoded,
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Failed to terminate task: $e'.hardcoded,
+                          ),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  }
+                }
+              },
+            );
+          },
+        );
+      },
     );
   }
 

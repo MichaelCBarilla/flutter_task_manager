@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_task_manager/src/features/tasks/data/tasks_repository.dart';
-import 'package:flutter_task_manager/src/features/tasks/domain/task.dart';
+import 'package:flutter_task_manager/src/features/tasks/presentation/tasks_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tasks_controller.g.dart';
@@ -12,7 +12,7 @@ class TasksController extends _$TasksController {
   Timer? _refreshTimer;
 
   @override
-  FutureOr<List<Task>> build() async {
+  FutureOr<TasksState> build() async {
     // Start auto-refresh timer
     _startAutoRefresh();
 
@@ -23,7 +23,7 @@ class TasksController extends _$TasksController {
 
     final repository = ref.read(tasksRepositoryProvider);
     final allTasks = await repository.fetchTasksList();
-    return allTasks;
+    return TasksState(allTasks: allTasks);
   }
 
   void _startAutoRefresh() {
@@ -33,7 +33,23 @@ class TasksController extends _$TasksController {
     });
   }
 
+  /// Update the search query
+  void updateSearchQuery(String query) {
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncValue.data(currentState.copyWith(searchQuery: query));
+    }
+  }
+
+  /// Clear the search query
+  void clearSearch() {
+    updateSearchQuery('');
+  }
+
   Future<void> deleteTask(String pid) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
     state = const AsyncValue.loading();
 
     try {
@@ -44,11 +60,15 @@ class TasksController extends _$TasksController {
       // After deleting, refresh the entire list
       await refresh();
     } catch (error, stackTrace) {
+      // Restore previous state on error
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   Future<void> refresh() async {
+    final currentState = state.value;
+    final currentSearchQuery = currentState?.searchQuery ?? '';
+
     // Don't show loading state during auto-refresh to avoid UI flicker
     final isAutoRefresh = state.hasValue;
 
@@ -59,7 +79,12 @@ class TasksController extends _$TasksController {
     try {
       final repository = ref.read(tasksRepositoryProvider);
       final tasks = await repository.fetchTasksList();
-      state = AsyncValue.data(tasks);
+      state = AsyncValue.data(
+        TasksState(
+          allTasks: tasks,
+          searchQuery: currentSearchQuery, // Preserve search query
+        ),
+      );
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
