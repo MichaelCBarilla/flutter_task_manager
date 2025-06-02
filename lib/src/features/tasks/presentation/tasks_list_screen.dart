@@ -44,16 +44,22 @@ class _TasksListScreenState extends State<TasksListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const HomeAppBar(),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: const [
-          ResponsiveSliverCenter(
+      body: Column(
+        children: [
+          // Fixed search bar at the top
+          const ResponsiveCenter(
             padding: EdgeInsets.all(Sizes.p16),
             child: TasksSearchTextField(),
           ),
-          ResponsiveSliverCenter(
-            padding: EdgeInsets.all(Sizes.p16),
-            child: TasksGrid(),
+          // Scrollable tasks grid below
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: const ResponsiveCenter(
+                padding: EdgeInsets.all(Sizes.p16),
+                child: TasksGrid(),
+              ),
+            ),
           ),
         ],
       ),

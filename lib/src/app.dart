@@ -13,7 +13,7 @@ class MyApp extends ConsumerWidget {
       routerConfig: goRouter,
       debugShowCheckedModeBanner: false,
       restorationScopeId: 'app',
-      onGenerateTitle: (BuildContext context) => 'My Shop'.hardcoded,
+      onGenerateTitle: (BuildContext context) => 'Tasks Manager'.hardcoded,
       theme: ThemeData(
         useMaterial3: true,
         primarySwatch: Colors.grey,
